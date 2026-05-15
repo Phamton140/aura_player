@@ -41,10 +41,13 @@ const YouTubeSearch: React.FC = () => {
     if (!searchQuery.trim()) return;
     setIsSearching(true);
     
-    const formData = new FormData();
-    formData.append('query', searchQuery);
+    const apiUrl = import.meta.env.VITE_API_URL || '';
     try {
-      const response = await fetch('http://localhost:8000/api/audio/youtube/search', { method: 'POST', body: formData });
+      const response = await fetch(`${apiUrl}/api/audio/youtube/search`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchQuery }) 
+      });
       const data = await response.json();
       
       if (Array.isArray(data)) {
