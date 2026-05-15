@@ -108,8 +108,39 @@ input[type=range]::-webkit-slider-thumb {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
+  overflow: hidden;
+  transition: border-color 0.2s;
 }
-.aura-search-input { flex: 1; border: none; background: transparent; padding: 0 20px; color: white; outline: none; }
+.aura-search-field:focus-within {
+  border-color: var(--accent-primary);
+}
+
+.aura-search-input { 
+  flex: 1; border: none; background: transparent; 
+  padding: 0 20px; color: white; outline: none; 
+  font-size: 1.1rem;
+}
+
+.aura-search-icon-btn {
+  width: 56px;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.aura-search-icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.aura-search-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* ─── Sidebar (Dual Panel System) ───────────────────────────────── */
 .aura-search-sidebar {
