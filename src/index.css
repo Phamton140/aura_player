@@ -261,11 +261,11 @@ input[type=range]::-webkit-slider-thumb {
 
 
 .aura-player-wrapper {
-  width: 112%;
-  height: 120%;
+  width: 120%;
+  height: 135%;
   position: absolute;
-  top: -10%;
-  left: -6%;
+  top: -17.5%;
+  left: -10%;
   display: block;
 }
 
