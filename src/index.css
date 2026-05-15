@@ -142,6 +142,25 @@ input[type=range]::-webkit-slider-thumb {
   cursor: not-allowed;
 }
 
+.aura-nav-btn {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle); transition: all 0.2s;
+  position: relative;
+}
+.aura-nav-btn:hover { background: rgba(255, 255, 255, 0.08); color: white; }
+.aura-nav-btn.active { background: rgba(59, 130, 246, 0.15); color: var(--accent-primary); border-color: var(--accent-primary); }
+
+.aura-btn-badge {
+  position: absolute; top: -5px; right: -5px;
+  background: var(--accent-primary); color: white;
+  font-size: 0.65rem; font-weight: 800; min-width: 18px; height: 18px;
+  border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  padding: 0 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  border: 2px solid var(--bg-surface);
+}
+
 /* ─── Sidebar (Dual Panel System) ───────────────────────────────── */
 .aura-search-sidebar {
   position: fixed; top: 64px; bottom: 104px;
@@ -331,3 +350,122 @@ input[type=range]::-webkit-slider-thumb {
   transition: color 0.2s;
 }
 .volume-toggle-btn:hover { color: white; }
+
+/* ─── Mobile Optimization ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .aura-header {
+    padding: 12px 16px;
+    height: auto;
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .aura-header > div {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .aura-header .aura-left { order: 1; }
+  .aura-header .aura-right { order: 2; width: auto; position: absolute; top: 12px; right: 16px; gap: 8px; }
+  .aura-header .aura-center { order: 3; }
+
+  .aura-brand span {
+    display: inline-block; /* Keep it on mobile if we have space now */
+    font-size: 1rem;
+  }
+
+  .aura-search-field {
+    width: 100%;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .aura-search-sidebar {
+    width: 100% !important;
+    top: 116px; /* Adjusted for taller header */
+    bottom: 80px;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  .aura-main-container {
+    top: 116px;
+    bottom: 80px;
+  }
+
+  .transport-bar {
+    height: 80px;
+    padding: 0 16px;
+  }
+
+
+  .transport-timeline {
+    gap: 12px;
+    height: 24px;
+  }
+
+  .time {
+    font-size: 0.65rem;
+    width: 35px;
+  }
+
+  .transport-main {
+    gap: 8px;
+  }
+
+  .song-info-mini {
+    width: auto;
+    flex: 1;
+    gap: 10px;
+  }
+
+  .mini-thumb {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mini-title {
+    font-size: 0.8rem;
+  }
+
+  .mini-artist {
+    font-size: 0.7rem;
+  }
+
+  .transport-controls {
+    gap: 16px;
+  }
+
+  .main-play {
+    width: 40px;
+    height: 40px;
+  }
+
+  .transport-extra {
+    display: none; /* Volume is usually system-controlled on mobile */
+  }
+
+  /* Adjust player overscan for vertical mobile screens */
+  .aura-player-wrapper {
+    width: 180%; /* Wider overscan to handle vertical rotation */
+    height: 120%;
+    left: -40%;
+    top: -10%;
+  }
+
+  .aura-toast {
+    width: 90%;
+    font-size: 0.8rem;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .aura-result-thumb-compact {
+    width: 100px;
+  }
+}
+

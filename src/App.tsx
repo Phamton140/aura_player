@@ -4,7 +4,7 @@ import TransportBar from './components/TransportBar';
 import VideoPlayer from './components/VideoPlayer';
 import ErrorBoundary from './components/ErrorBoundary';
 import YouTubeSearch from './components/YouTubeSearch';
-import { X, Play, Plus, Trash2, CheckCircle2, Music } from 'lucide-react';
+import { X, Play, Plus, Trash2, CheckCircle2, Music, ListMusic } from 'lucide-react';
 import * as Tone from 'tone';
 
 const TICK_INTERVAL = 16; // ms
@@ -251,7 +251,22 @@ function App() {
           <YouTubeSearch />
         </div>
         <div className="aura-right">
-          <div className="aura-spacer" />
+          <button 
+            className={`aura-nav-btn ${isSidebarOpen ? 'active' : ''}`} 
+            onClick={() => setSidebarOpen(!isSidebarOpen)}
+            title="Resultados"
+          >
+            <Music size={22} />
+            {searchResults.length > 0 && <span className="aura-btn-badge">{searchResults.length}</span>}
+          </button>
+          <button 
+            className={`aura-nav-btn ${isQueueOpen ? 'active' : ''}`} 
+            onClick={() => setQueueOpen(!isQueueOpen)}
+            title="Mi Cola"
+          >
+            <ListMusic size={22} />
+            {queue.length > 0 && <span className="aura-btn-badge">{queue.length}</span>}
+          </button>
         </div>
       </header>
 
