@@ -13,6 +13,7 @@ export interface PlaybackState {
   currentTime: number;
   speed: number;
   isLooping: boolean;
+  volume: number;
 }
 
 export interface AnalysisResult {

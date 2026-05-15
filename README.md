@@ -1,36 +1,33 @@
-# AuraPlayer AI 🎵
+# AuraPlayer — Primum Edition
 
-Buscador y reproductor inteligente de música impulsado por IA.
+AuraPlayer is a premium, minimalist web video player designed for an immersive and distraction-free experience. Originally focused on music analysis, it has evolved into a high-fidelity multimedia player with a focus on aesthetics, performance, and seamless YouTube integration.
 
-## Características
-- 🔍 **Búsqueda Integrada**: Encuentra cualquier video de YouTube directamente desde la aplicación.
-- 📺 **Reproductor Minimalista**: Interfaz premium enfocada en el contenido visual y auditivo.
-- ⚡ **Efectos Neón**: Barra de progreso con brillo cian neón dinámico.
-- 🚀 **Biblioteca de Demos**: Acceso rápido a videos sugeridos.
-- 🛠️ **Arquitectura Limpia**: Código base optimizado, eliminando redundancias de versiones anteriores.
+## 🚀 Key Features
 
-## Tecnologías
-- **Frontend**: React, TypeScript, Vite, Lucide React, Tone.js.
-- **Backend**: FastAPI, yt-dlp.
-- **Estilos**: CSS Moderno (Glassmorphism & Neon Design).
+- **Ultra-Minimalist Interface**: Every pixel is designed to focus on the content. No clutter, no distractions.
+- **Immersive Ambient Mode**: Dynamic glows that reflect the video colors, creating a "home cinema" feel.
+- **Primum Aesthetics**: High-end glassmorphism, smooth animations, and curated typography (Inter, Outfit, JetBrains Mono).
+- **Advanced YouTube Integration**: 
+  - High-speed search with compact results.
+  - Video-only filtering (removes channels and non-video content).
+  - High-resolution playback (up to 4K/HD support).
+- **Professional Controls**: 
+  - Precise progress and volume sliders with interactive "thumbs".
+  - Audio/Video synchronization engine.
+  - Playlist queue management.
+- **Invisible Layout**: Global removal of scrollbars for a cleaner, app-like experience.
 
-## Instalación
+## 🛠️ Technology Stack
 
-### Requisitos
-- Node.js
-- Python 3.10+
+- **Frontend**: React, TypeScript, Vite.
+- **State Management**: Zustand.
+- **Audio Engine**: Tone.js.
+- **Backend**: FastAPI (Python), yt-dlp.
+- **Styling**: Vanilla CSS (Modern CSS variables and glassmorphism).
 
-### Frontend
-```bash
-npm install
-npm run dev
-```
+## 🚧 Development Status
 
-### Backend
-```bash
-python -m pip install -r requirements.txt
-python -m backend.main
-```
+We are currently in active development, refining the core video playback experience and enhancing the search/queue functionality. AuraPlayer aims to be the cleanest way to enjoy high-quality content on the web.
 
 ---
-Desarrollado con ❤️ para una experiencia musical superior.
+*Developed with ❤️ for the ultimate viewing experience.*

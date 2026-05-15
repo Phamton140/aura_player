@@ -1,12 +1,10 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useMusicStore } from './store/useMusicStore';
 import TransportBar from './components/TransportBar';
-import SongLibrary from './components/SongLibrary';
 import VideoPlayer from './components/VideoPlayer';
 import ErrorBoundary from './components/ErrorBoundary';
-import AudioImportPanel from './components/AudioImportPanel';
-import type { Song } from './types/music';
-import { Music, Sparkles, Menu, X, Play } from 'lucide-react';
+import YouTubeSearch from './components/YouTubeSearch';
+import { X, Play, Plus } from 'lucide-react';
 import * as Tone from 'tone';
 
 const TICK_INTERVAL = 16; // ms
@@ -15,10 +13,11 @@ function App() {
   const {
     song,
     playback,
-    sidebarOpen,
+    searchResults,
     setSong,
     setPlayback,
-    setSidebarOpen,
+    setSearchResults,
+    addToQueue,
     seek
   } = useMusicStore();
 
@@ -26,20 +25,60 @@ function App() {
   const startWallRef = useRef<number>(0);
   const startSongRef = useRef<number>(0);
 
+  // ── Search Logic (Global) ────────────────────────────────────────────────
+  const extractYoutubeId = (url: string) => {
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[7].length === 11) ? match[7] : undefined;
+  };
+
+  const handleSelectVideo = useCallback(async (video: any) => {
+    const youtubeId = extractYoutubeId(video.url);
+    if (!youtubeId) return;
+
+    const songData = {
+      id: youtubeId,
+      title: video.title || 'Video de YouTube',
+      composer: video.channel || 'YouTube',
+      tempo: 120,
+      totalDuration: video.duration || 3600, 
+      youtubeId,
+      thumbnail: video.thumbnail
+    };
+
+    await Tone.start();
+    setSong(songData);
+    setSearchResults([]);
+    setPlayback({ currentTime: 0, isPlaying: true });
+  }, [setSong, setSearchResults, setPlayback]);
+
+  const handleAddToQueue = useCallback((video: any) => {
+    const youtubeId = extractYoutubeId(video.url);
+    if (!youtubeId) return;
+
+    const songData = {
+      id: youtubeId,
+      title: video.title || 'Video de YouTube',
+      composer: video.channel || 'YouTube',
+      tempo: 120,
+      totalDuration: video.duration || 3600, 
+      youtubeId,
+      thumbnail: video.thumbnail
+    };
+    addToQueue(songData);
+  }, [addToQueue]);
+
   // ── Playback tick ─────────────────────────────────────────────────────────
   const startTick = useCallback((fromTime: number) => {
+    if (song?.youtubeId) return;
     startWallRef.current = performance.now();
     startSongRef.current = fromTime;
-
     if (tickRef.current) clearInterval(tickRef.current);
-    
     tickRef.current = setInterval(() => {
       const now = performance.now();
       const elapsed = (now - startWallRef.current) / 1000;
       let newTime = startSongRef.current + elapsed * playback.speed;
-
       if (!song) return;
-      
       if (newTime >= song.totalDuration) {
         if (playback.isLooping) {
           startSongRef.current = 0;
@@ -51,7 +90,6 @@ function App() {
         }
         return;
       }
-      
       setPlayback({ currentTime: newTime });
     }, TICK_INTERVAL);
   }, [playback.speed, playback.isLooping, song, setPlayback]);
@@ -66,7 +104,7 @@ function App() {
     await Tone.start();
     if (!song) return;
     setPlayback({ isPlaying: true });
-    startTick(playback.currentTime);
+    if (!song.youtubeId) startTick(playback.currentTime);
   }, [song, playback.currentTime, setPlayback, startTick]);
 
   const handlePause = useCallback(() => {
@@ -81,44 +119,24 @@ function App() {
 
   const handleSeek = useCallback((t: number) => {
     const wasPlaying = playback.isPlaying;
-    if (wasPlaying) {
-      stopTick();
-    }
+    if (wasPlaying) stopTick();
     seek(t);
-    if (wasPlaying) {
+    if (wasPlaying && !song?.youtubeId) {
       setTimeout(() => {
         startSongRef.current = t;
         startWallRef.current = performance.now();
         startTick(t);
       }, 50);
     }
-  }, [playback.isPlaying, seek, startTick]);
+  }, [playback.isPlaying, seek, startTick, song?.youtubeId]);
 
-  const handleSpeedChange = useCallback((speed: number) => {
-    const wasPlaying = playback.isPlaying;
-    if (wasPlaying) { stopTick(); }
-    setPlayback({ speed });
-    if (wasPlaying) {
-      setTimeout(() => {
-        startWallRef.current = performance.now();
-        startSongRef.current = playback.currentTime;
-        startTick(playback.currentTime);
-      }, 50);
-    }
-  }, [playback.isPlaying, playback.currentTime, setPlayback, startTick]);
-
-  const handleLoopToggle = useCallback(() => {
-    setPlayback({ isLooping: !playback.isLooping });
-  }, [playback.isLooping, setPlayback]);
-
+  const handleLoopToggle = useCallback(() => setPlayback({ isLooping: !playback.isLooping }), [playback.isLooping, setPlayback]);
   const handleSkipBack = useCallback(() => handleSeek(Math.max(0, playback.currentTime - 5)), [handleSeek, playback.currentTime]);
   const handleSkipForward = useCallback(() => handleSeek(Math.min(song?.totalDuration ?? 0, playback.currentTime + 5)), [handleSeek, playback.currentTime, song]);
 
   useEffect(() => {
     const resumeAudio = () => {
-      if (Tone.getContext().state !== 'running') {
-        Tone.getContext().resume();
-      }
+      if (Tone.getContext().state !== 'running') Tone.getContext().resume();
     };
     window.addEventListener('click', resumeAudio);
     return () => {
@@ -127,107 +145,97 @@ function App() {
     };
   }, []);
 
-  // Sync state when coming back to the tab
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && playback.isPlaying) {
-        startWallRef.current = performance.now();
-        startSongRef.current = playback.currentTime;
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [playback.isPlaying, playback.currentTime]);
-
-  const handleSongLoad = useCallback(async (newSong: Song) => {
-    await Tone.start();
-    setSong(newSong);
-    setPlayback({ currentTime: 0, isPlaying: false });
-    stopTick();
-  }, [setSong, setPlayback]);
-
   return (
-    <div className="app player-mode">
-      <header className="app-header">
-        <div className="header-left">
-          <button className="menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-          <div className="logo">
-            <Music size={24} className="logo-icon" />
-            <span className="logo-text">Aura<span className="logo-accent">Player</span><sup>AI</sup></span>
+    <div className="app aura-player-v2">
+      <div className="aura-ambient-bg">
+        {song?.thumbnail && <img src={song.thumbnail} alt="" className="aura-blur-img" />}
+      </div>
+
+      <header className="aura-header">
+        <div className="aura-left">
+          <div className="aura-brand" onClick={() => setSong(null)}>
+            <div className="brand-dot"></div>
+            <span>AuraPlayer</span>
           </div>
         </div>
-        <div className="header-center">
-          <div className="search-bar-placeholder">
-            <Sparkles size={13} /> Descubre y reproduce tus videos favoritos
-          </div>
+        <div className="aura-center">
+          <YouTubeSearch />
         </div>
-        <div className="header-right">
-          <div className="user-profile-mock">
-            <div className="avatar">A</div>
-          </div>
+        <div className="aura-right">
+          <div className="aura-user-token">A</div>
         </div>
       </header>
 
-      <div className="app-body">
-        <aside className={`sidebar ${sidebarOpen ? '' : 'closed'}`}>
-          <div className="sidebar-section">
-            <AudioImportPanel />
+      {/* Global Results Sidebar (Reduced Size & Action Buttons) */}
+      {searchResults.length > 0 && (
+        <div className="aura-search-sidebar">
+          <div className="aura-sidebar-header">
+            <h3>Resultados</h3>
+            <button className="aura-close-sidebar" onClick={() => setSearchResults([])}>
+              <X size={20} />
+            </button>
           </div>
-
-          <div className="sidebar-divider"></div>
-
-          <div className="song-library">
-            <SongLibrary currentSong={song} onSelect={handleSongLoad} />
-          </div>
-        </aside>
-
-        <main className="main-content">
-          <div className="player-viewport">
-            {song ? (
-              <div className="video-container-wrapper">
-                <ErrorBoundary>
-                  <VideoPlayer />
-                </ErrorBoundary>
-                {!song.youtubeId && (
-                  <div className="audio-only-view">
-                    <div className="visualizer-mock">
-                      <div className="bar" style={{height: '40%'}}></div>
-                      <div className="bar" style={{height: '70%'}}></div>
-                      <div className="bar" style={{height: '100%'}}></div>
-                      <div className="bar" style={{height: '60%'}}></div>
-                      <div className="bar" style={{height: '80%'}}></div>
-                    </div>
-                    <h2>{song.title}</h2>
-                    <p>{song.composer}</p>
+          <div className="aura-results-scrollable">
+            {searchResults
+              .filter((video) => video.duration !== null)
+              .map((video) => (
+              <div key={video.id} className="aura-result-item-compact">
+                <div className="aura-result-thumb-compact">
+                  {video.thumbnail ? <img src={video.thumbnail} alt="" /> : <div className="aura-thumb-placeholder">No Thumb</div>}
+                  <div className="aura-item-overlay">
+                    <button className="aura-action-btn" onClick={() => handleSelectVideo(video)}>
+                      <Play size={18} fill="currentColor" />
+                    </button>
+                    <button className="aura-action-btn" onClick={() => handleAddToQueue(video)}>
+                      <Plus size={18} />
+                    </button>
                   </div>
-                )}
+                </div>
+                <div className="aura-result-info-compact">
+                  <div className="aura-result-title-compact">{video.title}</div>
+                  <div className="aura-result-meta-compact">{video.channel}</div>
+                </div>
               </div>
-            ) : (
-              <div className="empty-player">
-                <div className="aura-glow"></div>
-                <Play size={64} className="play-icon-bg" />
-                <h2>Listo para reproducir</h2>
-                <p>Busca un video en YouTube o selecciona uno de tu biblioteca</p>
-              </div>
-            )}
+            ))}
           </div>
-          
-          <TransportBar
-            song={song}
-            playback={playback}
-            onPlay={handlePlay}
-            onPause={handlePause}
-            onStop={handleStop}
-            onSeek={handleSeek}
-            onSpeedChange={handleSpeedChange}
-            onLoopToggle={handleLoopToggle}
-            onSkipBack={handleSkipBack}
-            onSkipForward={handleSkipForward}
-          />
+        </div>
+      )}
+
+      <div className="aura-main-container">
+        <main className="aura-content-area">
+          {song ? (
+            <div className="aura-minimalist-stage">
+              <div className="aura-player-full-focus">
+                <div className="aura-player-wrapper">
+                  <ErrorBoundary>
+                    <VideoPlayer />
+                  </ErrorBoundary>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="aura-home-view">
+              <div className="aura-empty-stage">
+                <div className="aura-stage-glow"></div>
+                <div className="aura-stage-outline"></div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
+
+      <TransportBar
+        song={song}
+        playback={playback}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onStop={handleStop}
+        onSeek={handleSeek}
+        onSpeedChange={() => {}}
+        onLoopToggle={handleLoopToggle}
+        onSkipBack={handleSkipBack}
+        onSkipForward={handleSkipForward}
+      />
     </div>
   );
 }

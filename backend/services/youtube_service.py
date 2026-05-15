@@ -40,12 +40,32 @@ class YouTubeService:
             info = ydl.extract_info(f"ytsearch{max_results}:{query}", download=False)
             results = []
             for entry in info.get('entries', []):
+                video_id = entry.get('id')
+                title = entry.get('title')
+                duration = entry.get('duration')
+                uploader = entry.get('uploader')
+                
+                # STRICT FILTERS:
+                # 1. ID must be exactly 11 chars (Standard YouTube Video ID)
+                if not video_id or len(video_id) != 11:
+                    continue
+                
+                # 2. Skip entries without duration (channels/playlists usually don't have it in search results)
+                if duration is None:
+                    continue
+                    
+                # 3. Skip if title is identical to uploader (often indicates a channel result)
+                if title == uploader and duration == 0:
+                    continue
+
                 results.append({
-                    'id': entry.get('id'),
-                    'title': entry.get('title'),
-                    'url': f"https://www.youtube.com/watch?v={entry.get('id')}",
+                    'id': video_id,
+                    'title': title,
+                    'url': f"https://www.youtube.com/watch?v={video_id}",
                     'thumbnail': entry.get('thumbnails')[0]['url'] if entry.get('thumbnails') else None,
-                    'duration': entry.get('duration'),
-                    'channel': entry.get('uploader')
+                    'duration': duration,
+                    'channel': uploader
                 })
+            
+            print(f"DEBUG: Found {len(results)} valid videos for query: {query}")
             return results

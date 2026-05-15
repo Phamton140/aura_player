@@ -1,8 +1,9 @@
 import React from 'react';
 import {
-  Play, Pause, Square, SkipBack, SkipForward,
-  Repeat, Gauge, Music2
+  Play, Pause, SkipBack, SkipForward,
+  Repeat, Volume2, Maximize
 } from 'lucide-react';
+import { useMusicStore } from '../store/useMusicStore';
 import type { PlaybackState, Song } from '../types/music';
 
 interface TransportBarProps {
@@ -19,17 +20,17 @@ interface TransportBarProps {
 }
 
 function formatTime(sec: number): string {
+  if (!sec || isNaN(sec)) return "0:00";
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-const SPEEDS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
-
 const TransportBar: React.FC<TransportBarProps> = ({
-  song, playback, onPlay, onPause, onStop, onSeek,
-  onSpeedChange, onLoopToggle, onSkipBack, onSkipForward
+  song, playback, onPlay, onPause, onSeek,
+  onLoopToggle, onSkipBack, onSkipForward
 }) => {
+  const { setPlayback } = useMusicStore();
   const duration = song?.totalDuration ?? 0;
   const pct = duration > 0 ? (playback.currentTime / duration) * 100 : 0;
 
@@ -38,24 +39,15 @@ const TransportBar: React.FC<TransportBarProps> = ({
     onSeek((v / 100) * duration);
   };
 
-  return (
-    <div className="transport-bar">
-      {/* Song info */}
-      <div className="transport-info">
-        <Music2 size={16} className="transport-icon" />
-        <div>
-          <p className="transport-title">{song?.title ?? 'No hay video cargado'}</p>
-          {song && (
-            <p className="transport-meta">
-              {song.composer ?? 'Desconocido'}
-            </p>
-          )}
-        </div>
-      </div>
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const volume = parseInt(e.target.value);
+    setPlayback({ volume });
+  };
 
-      {/* Timeline */}
+  return (
+    <div className="transport-bar" style={{ '--pct': `${pct}%` } as React.CSSProperties}>
       <div className="transport-timeline">
-        <span className="time-label">{formatTime(playback.currentTime)}</span>
+        <span className="time">{formatTime(playback.currentTime)}</span>
         <input
           type="range"
           min={0}
@@ -66,56 +58,50 @@ const TransportBar: React.FC<TransportBarProps> = ({
           className="scrubber"
           disabled={!song}
         />
-        <span className="time-label">{formatTime(duration)}</span>
+        <span className="time">{formatTime(duration)}</span>
       </div>
 
-      {/* Controls */}
-      <div className="transport-controls">
-        <button className="ctrl-btn" onClick={onSkipBack} disabled={!song} title="Retroceder 5s">
-          <SkipBack size={18} />
-        </button>
+      <div className="transport-main">
+        <div className="song-info-mini">
+          {song && (
+            <>
+              <div className="mini-thumb">
+                {song.thumbnail && <img src={song.thumbnail} alt="" />}
+              </div>
+              <div className="mini-text">
+                <div className="mini-title">{song.title}</div>
+                <div className="mini-artist">{song.composer}</div>
+              </div>
+            </>
+          )}
+        </div>
 
-        <button className="ctrl-btn" onClick={onStop} disabled={!song} title="Parar">
-          <Square size={18} />
-        </button>
-
-        {playback.isPlaying ? (
-          <button className="ctrl-btn primary" onClick={onPause} disabled={!song} title="Pausa">
-            <Pause size={22} />
+        <div className="transport-controls">
+          <button className="ctrl-btn" onClick={onSkipBack}><SkipBack size={20} /></button>
+          <button className="ctrl-btn main-play" onClick={playback.isPlaying ? onPause : onPlay}>
+            {playback.isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
           </button>
-        ) : (
-          <button className="ctrl-btn primary" onClick={onPlay} disabled={!song} title="Reproducir">
-            <Play size={22} />
+          <button className="ctrl-btn" onClick={onSkipForward}><SkipForward size={20} /></button>
+          <button className={`ctrl-btn ${playback.isLooping ? 'active' : ''}`} onClick={onLoopToggle}>
+            <Repeat size={18} />
           </button>
-        )}
+        </div>
 
-        <button className="ctrl-btn" onClick={onSkipForward} disabled={!song} title="Adelantar 5s">
-          <SkipForward size={18} />
-        </button>
-
-        <button
-          className={`ctrl-btn ${playback.isLooping ? 'active' : ''}`}
-          onClick={onLoopToggle}
-          disabled={!song}
-          title="Bucle"
-        >
-          <Repeat size={18} />
-        </button>
-      </div>
-
-      {/* Speed control */}
-      <div className="transport-options">
-        <div className="speed-control">
-          <Gauge size={14} />
-          <select
-            value={playback.speed}
-            onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
-            className="speed-select"
-          >
-            {SPEEDS.map((s) => (
-              <option key={s} value={s}>{s}x</option>
-            ))}
-          </select>
+        <div className="transport-extra">
+          <div className="volume-mini">
+            <Volume2 size={18} />
+            <div className="volume-track">
+              <input 
+                type="range" 
+                min={0} 
+                max={100} 
+                value={playback.volume} 
+                onChange={handleVolumeChange} 
+                className="volume-slider-input"
+              />
+            </div>
+          </div>
+          <button className="ctrl-btn"><Maximize size={18} /></button>
         </div>
       </div>
     </div>
