@@ -216,12 +216,31 @@ function App() {
     const resumeAudio = () => {
       if (Tone.getContext().state !== 'running') Tone.getContext().resume();
     };
+    
+    // Media Session Support
+    if ('mediaSession' in navigator && song) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: song.title,
+        artist: song.composer,
+        artwork: [
+          { src: song.thumbnail || '', sizes: '512x512', type: 'image/jpeg' }
+        ]
+      });
+
+      navigator.mediaSession.setActionHandler('play', handlePlay);
+      navigator.mediaSession.setActionHandler('pause', handlePause);
+      navigator.mediaSession.setActionHandler('previoustrack', handleSkipBack);
+      navigator.mediaSession.setActionHandler('nexttrack', handleSkipForward);
+      navigator.mediaSession.setActionHandler('seekbackward', handleSkipBack);
+      navigator.mediaSession.setActionHandler('seekforward', handleSkipForward);
+    }
+
     window.addEventListener('click', resumeAudio);
     return () => {
       stopTick();
       window.removeEventListener('click', resumeAudio);
     };
-  }, []);
+  }, [song, handlePlay, handlePause, handleSkipBack, handleSkipForward]);
 
   return (
     <div className="app aura-player-v2" ref={appContainerRef}>
