@@ -1,7 +1,7 @@
 {
-  "name": "partituras",
+  "name": "aura-player",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,14 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tonejs/midi": "^2.0.28",
     "lucide-react": "^1.16.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-dropzone": "^15.0.0",
     "react-youtube": "^10.1.0",
     "tone": "^15.1.22",
-    "vexflow": "^5.0.0",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
@@ -25,7 +23,6 @@
     "@types/node": "^24.12.4",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@types/webmidi": "^2.1.0",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
