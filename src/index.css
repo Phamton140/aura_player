@@ -71,6 +71,52 @@ input[type=range]::-webkit-slider-thumb {
 /* ─── Sidebar ────────────────────────────────────────────────── */
 .aura-search-sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 320px; background: rgba(10, 10, 12, 0.98); backdrop-filter: blur(40px); border-right: 1px solid var(--border-subtle); display: flex; flex-direction: column; z-index: 999999; }
 
+.aura-sidebar-header {
+  padding: 24px 20px; border-bottom: 1px solid var(--border-subtle);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.aura-sidebar-header h3 { font-size: 1rem; font-weight: 700; color: white; }
+.aura-close-sidebar { color: var(--text-muted); transition: color 0.2s; }
+
+.aura-results-scrollable { 
+  flex: 1; overflow-y: auto; padding: 12px; 
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+/* Compact Item Layout */
+.aura-result-item-compact {
+  display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 8px;
+  cursor: pointer; transition: background 0.2s;
+}
+.aura-result-item-compact:hover { background: var(--bg-hover); }
+
+.aura-result-thumb-compact {
+  width: 120px; aspect-ratio: 16 / 9; flex-shrink: 0;
+  border-radius: 6px; overflow: hidden;
+  background: #111; position: relative;
+}
+.aura-result-thumb-compact img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Item Overlay for Actions */
+.aura-item-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  opacity: 0; transition: opacity 0.2s;
+}
+.aura-result-thumb-compact:hover .aura-item-overlay { opacity: 1; }
+
+.aura-action-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: white; color: black;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s;
+}
+.aura-action-btn:hover { transform: scale(1.1); background: var(--accent-primary); color: white; }
+
+.aura-result-info-compact { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.aura-result-title-compact { font-size: 0.85rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aura-result-meta-compact { font-size: 0.75rem; color: var(--text-secondary); }
+
 /* ─── Stage View (ULTRA MAXIMIZED) ───────────────────────────── */
 .aura-main-container {
   position: fixed;
@@ -89,12 +135,18 @@ input[type=range]::-webkit-slider-thumb {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
   position: relative;
+  overflow: hidden; /* Crop native YouTube overlays */
 }
 
 /* The Secret Sauce: Targeting react-youtube internal wrapper */
 .video-player-container {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
+  transform: scale(1.1); /* Zoom slightly to push branding out */
+}
+
+.no-interaction {
+  pointer-events: none; /* Prevents clicking on YouTube logos/links */
 }
 
 /* Force EVERY CHILD of the player container to be 100% */

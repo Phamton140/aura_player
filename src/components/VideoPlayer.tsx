@@ -89,13 +89,16 @@ const VideoPlayer: React.FC = () => {
       modestbranding: 1,
       rel: 0,
       showinfo: 0,
+      iv_load_policy: 3, // Hide annotations
+      disablekb: 1,     // Disable keyboard shortcuts
+      fs: 0,            // Disable fullscreen button
       origin: window.location.origin,
-      vq: 'hd1080', // Hint for high quality
+      vq: 'hd1080',
     },
   };
 
   return (
-    <div className="video-player-container">
+    <div className="video-player-container no-interaction">
       <YouTube 
         videoId={song.youtubeId} 
         opts={opts} 
