@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
-  Repeat, Volume2, Maximize
+  Repeat, Volume2, Maximize, Search, ListMusic
 } from 'lucide-react';
 import { useMusicStore } from '../store/useMusicStore';
 import type { PlaybackState, Song } from '../types/music';
@@ -17,6 +17,7 @@ interface TransportBarProps {
   onLoopToggle: () => void;
   onSkipBack: () => void;
   onSkipForward: () => void;
+  onFullscreen?: () => void;
 }
 
 function formatTime(sec: number): string {
@@ -28,9 +29,9 @@ function formatTime(sec: number): string {
 
 const TransportBar: React.FC<TransportBarProps> = ({
   song, playback, onPlay, onPause, onSeek,
-  onLoopToggle, onSkipBack, onSkipForward
+  onLoopToggle, onSkipBack, onSkipForward, onFullscreen
 }) => {
-  const { setPlayback } = useMusicStore();
+  const { setPlayback, isSidebarOpen, setSidebarOpen, isQueueOpen, setQueueOpen } = useMusicStore();
   const duration = song?.totalDuration ?? 0;
   const pct = duration > 0 ? (playback.currentTime / duration) * 100 : 0;
 
@@ -77,11 +78,30 @@ const TransportBar: React.FC<TransportBarProps> = ({
         </div>
 
         <div className="transport-controls">
+          <button 
+            className={`ctrl-btn ${isSidebarOpen ? 'active' : ''}`} 
+            onClick={() => setSidebarOpen(!isSidebarOpen)}
+            title="Resultados"
+          >
+            <Search size={20} />
+          </button>
+
           <button className="ctrl-btn" onClick={onSkipBack}><SkipBack size={20} /></button>
+          
           <button className="ctrl-btn main-play" onClick={playback.isPlaying ? onPause : onPlay}>
             {playback.isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
           </button>
+          
           <button className="ctrl-btn" onClick={onSkipForward}><SkipForward size={20} /></button>
+          
+          <button 
+            className={`ctrl-btn ${isQueueOpen ? 'active' : ''}`} 
+            onClick={() => setQueueOpen(!isQueueOpen)}
+            title="Cola"
+          >
+            <ListMusic size={20} />
+          </button>
+
           <button className={`ctrl-btn ${playback.isLooping ? 'active' : ''}`} onClick={onLoopToggle}>
             <Repeat size={18} />
           </button>
@@ -101,7 +121,7 @@ const TransportBar: React.FC<TransportBarProps> = ({
               />
             </div>
           </div>
-          <button className="ctrl-btn"><Maximize size={18} /></button>
+          <button className="ctrl-btn" onClick={onFullscreen}><Maximize size={18} /></button>
         </div>
       </div>
     </div>

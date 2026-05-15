@@ -17,6 +17,8 @@ interface MusicStore {
   audioLoading: boolean;
   searchResults: SearchResult[];
   queue: Song[];
+  isSidebarOpen: boolean;
+  isQueueOpen: boolean;
 
   // Actions
   setSong: (song: Song | null) => void;
@@ -24,6 +26,8 @@ interface MusicStore {
   setAudioReady: (ready: boolean) => void;
   setAudioLoading: (loading: boolean) => void;
   setSearchResults: (results: SearchResult[]) => void;
+  setSidebarOpen: (open: boolean) => void;
+  setQueueOpen: (open: boolean) => void;
   addToQueue: (song: Song) => void;
   removeFromQueue: (id: string) => void;
   seek: (time: number) => void;
@@ -42,6 +46,8 @@ export const useMusicStore = create<MusicStore>((set) => ({
   audioLoading: false,
   searchResults: [],
   queue: [],
+  isSidebarOpen: false,
+  isQueueOpen: false,
 
   setSong: (song) => set((state) => ({ 
     song, 
@@ -60,7 +66,12 @@ export const useMusicStore = create<MusicStore>((set) => ({
 
   setAudioReady: (audioReady) => set({ audioReady }),
   setAudioLoading: (audioLoading) => set({ audioLoading }),
-  setSearchResults: (searchResults) => set({ searchResults }),
+  setSearchResults: (searchResults) => set({ 
+    searchResults, 
+    isSidebarOpen: searchResults.length > 0 
+  }),
+  setSidebarOpen: (isSidebarOpen) => set({ isSidebarOpen }),
+  setQueueOpen: (isQueueOpen) => set({ isQueueOpen }),
   
   addToQueue: (song) => set((state) => ({
     queue: [...state.queue, song]

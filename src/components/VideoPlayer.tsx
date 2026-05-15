@@ -89,11 +89,11 @@ const VideoPlayer: React.FC = () => {
       modestbranding: 1,
       rel: 0,
       showinfo: 0,
-      iv_load_policy: 3, // Hide annotations
-      disablekb: 1,     // Disable keyboard shortcuts
-      fs: 0,            // Disable fullscreen button
+      iv_load_policy: 3,
+      disablekb: 1,
+      fs: 0,
       origin: window.location.origin,
-      vq: 'hd1080',
+      vq: 'hd2160', // Request 4K/Highest available
     },
   };
 

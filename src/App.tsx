@@ -4,7 +4,7 @@ import TransportBar from './components/TransportBar';
 import VideoPlayer from './components/VideoPlayer';
 import ErrorBoundary from './components/ErrorBoundary';
 import YouTubeSearch from './components/YouTubeSearch';
-import { X, Play, Plus } from 'lucide-react';
+import { X, Play, Plus, Trash2 } from 'lucide-react';
 import * as Tone from 'tone';
 
 const TICK_INTERVAL = 16; // ms
@@ -14,16 +14,22 @@ function App() {
     song,
     playback,
     searchResults,
+    queue,
+    isSidebarOpen,
+    isQueueOpen,
     setSong,
     setPlayback,
-    setSearchResults,
+    setSidebarOpen,
+    setQueueOpen,
     addToQueue,
+    removeFromQueue,
     seek
   } = useMusicStore();
 
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startWallRef = useRef<number>(0);
   const startSongRef = useRef<number>(0);
+  const appContainerRef = useRef<HTMLDivElement>(null);
 
   // ── Search Logic (Global) ────────────────────────────────────────────────
   const extractYoutubeId = (url: string) => {
@@ -48,9 +54,8 @@ function App() {
 
     await Tone.start();
     setSong(songData);
-    setSearchResults([]);
     setPlayback({ currentTime: 0, isPlaying: true });
-  }, [setSong, setSearchResults, setPlayback]);
+  }, [setSong, setPlayback]);
 
   const handleAddToQueue = useCallback((video: any) => {
     const youtubeId = extractYoutubeId(video.url);
@@ -134,6 +139,14 @@ function App() {
   const handleSkipBack = useCallback(() => handleSeek(Math.max(0, playback.currentTime - 5)), [handleSeek, playback.currentTime]);
   const handleSkipForward = useCallback(() => handleSeek(Math.min(song?.totalDuration ?? 0, playback.currentTime + 5)), [handleSeek, playback.currentTime, song]);
 
+  const handleToggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      appContainerRef.current?.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
+
   useEffect(() => {
     const resumeAudio = () => {
       if (Tone.getContext().state !== 'running') Tone.getContext().resume();
@@ -146,7 +159,7 @@ function App() {
   }, []);
 
   return (
-    <div className="app aura-player-v2">
+    <div className="app aura-player-v2" ref={appContainerRef}>
       <div className="aura-ambient-bg">
         {song?.thumbnail && <img src={song.thumbnail} alt="" className="aura-blur-img" />}
       </div>
@@ -166,12 +179,12 @@ function App() {
         </div>
       </header>
 
-      {/* Global Results Sidebar (Reduced Size & Action Buttons) */}
-      {searchResults.length > 0 && (
-        <div className="aura-search-sidebar">
+      {/* Results Sidebar (Left) */}
+      {isSidebarOpen && searchResults.length > 0 && (
+        <div className="aura-search-sidebar left">
           <div className="aura-sidebar-header">
             <h3>Resultados</h3>
-            <button className="aura-close-sidebar" onClick={() => setSearchResults([])}>
+            <button className="aura-close-sidebar" onClick={() => setSidebarOpen(false)}>
               <X size={20} />
             </button>
           </div>
@@ -197,6 +210,37 @@ function App() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Queue Sidebar (Right) */}
+      {isQueueOpen && (
+        <div className="aura-search-sidebar right">
+          <div className="aura-sidebar-header">
+            <h3>Mi Cola</h3>
+            <button className="aura-close-sidebar" onClick={() => setQueueOpen(false)}>
+              <X size={20} />
+            </button>
+          </div>
+          <div className="aura-results-scrollable">
+            {queue.length === 0 ? (
+              <div className="aura-empty-queue">La cola está vacía</div>
+            ) : (
+              queue.map((item, idx) => (
+                <div key={`${item.id}-${idx}`} className="aura-result-item-compact">
+                  <div className="aura-result-thumb-compact" onClick={() => setSong(item)}>
+                    {item.thumbnail ? <img src={item.thumbnail} alt="" /> : <div className="aura-thumb-placeholder" />}
+                  </div>
+                  <div className="aura-result-info-compact">
+                    <div className="aura-result-title-compact">{item.title}</div>
+                    <button className="aura-remove-btn" onClick={() => removeFromQueue(item.id)}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -235,6 +279,7 @@ function App() {
         onLoopToggle={handleLoopToggle}
         onSkipBack={handleSkipBack}
         onSkipForward={handleSkipForward}
+        onFullscreen={handleToggleFullscreen}
       />
     </div>
   );
