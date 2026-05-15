@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { YouTubeProps, YouTubePlayer } from 'react-youtube';
 import YouTube from 'react-youtube';
 import { useMusicStore } from '../store/useMusicStore';
 
 const VideoPlayer: React.FC = () => {
-  const { song, playback, setPlayback } = useMusicStore();
+  const { song, playback, setPlayback, queue, removeFromQueue, setSong } = useMusicStore();
   const playerRef = useRef<YouTubePlayer | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -66,7 +66,6 @@ const VideoPlayer: React.FC = () => {
     playerRef.current.setVolume(playback.volume);
     playerRef.current.setPlaybackRate(playback.speed);
     
-    // Attempt to set highest quality (deprecated but sometimes works)
     if (typeof playerRef.current.setPlaybackQuality === 'function') {
       playerRef.current.setPlaybackQuality('highres');
     }
@@ -77,6 +76,21 @@ const VideoPlayer: React.FC = () => {
       setPlayback({ isPlaying: true });
     } else if (event.data === 2) {
       setPlayback({ isPlaying: false });
+    } else if (event.data === 0) {
+      // VIDEO ENDED: Crucial to avoid suggested videos grid
+      if (playback.isLooping) {
+        playerRef.current.seekTo(0);
+        playerRef.current.playVideo();
+      } else if (queue.length > 0) {
+        // Auto-play next in queue
+        const nextSong = queue[0];
+        removeFromQueue(nextSong.id);
+        setSong(nextSong);
+      } else {
+        // Stop and clear to avoid showing the "Related Videos" grid
+        setPlayback({ isPlaying: false, currentTime: 0 });
+        setSong(null); 
+      }
     }
   };
 
@@ -87,13 +101,13 @@ const VideoPlayer: React.FC = () => {
       autoplay: 1,
       controls: 0,
       modestbranding: 1,
-      rel: 0,
+      rel: 0, // Minimizes (but doesn't remove) related videos
       showinfo: 0,
       iv_load_policy: 3,
       disablekb: 1,
       fs: 0,
       origin: window.location.origin,
-      vq: 'hd2160', // Request 4K/Highest available
+      vq: 'hd2160',
     },
   };
 

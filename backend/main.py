@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routers import audio_transcription
 
-app = FastAPI(title="AuraPlayer AI Backend", version="1.1.0")
+app = FastAPI(title="AuraPlayer AI Backend", version="1.1.1")
 
 # Configure CORS for the React frontend
 app.add_middleware(

@@ -1,6 +1,7 @@
 import os
 import yt_dlp
 import uuid
+from datetime import datetime
 
 class YouTubeService:
     def __init__(self, download_path="temp"):
@@ -27,8 +28,8 @@ class YouTubeService:
             filename = os.path.join(self.download_path, f"{file_id}.{ext}")
             return filename, info.get('title', 'Unknown')
 
-    def search_videos(self, query: str, max_results=5):
-        """Searches YouTube for a query and returns a list of results."""
+    def search_videos(self, query: str, max_results=30):
+        """Searches YouTube for a query and returns a list of results sorted by date."""
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
@@ -36,25 +37,21 @@ class YouTubeService:
             'force_generic_utils': True,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Add 'ytsearch:' prefix to force search
-            info = ydl.extract_info(f"ytsearch{max_results}:{query}", download=False)
+            # We fetch more to allow filtering and sorting
+            info = ydl.extract_info(f"ytsearch{max_results if max_results > 50 else 50}:{query}", download=False)
             results = []
             for entry in info.get('entries', []):
                 video_id = entry.get('id')
                 title = entry.get('title')
                 duration = entry.get('duration')
                 uploader = entry.get('uploader')
+                upload_date = entry.get('upload_date') # YYYYMMDD
                 
                 # STRICT FILTERS:
-                # 1. ID must be exactly 11 chars (Standard YouTube Video ID)
                 if not video_id or len(video_id) != 11:
                     continue
-                
-                # 2. Skip entries without duration (channels/playlists usually don't have it in search results)
                 if duration is None:
                     continue
-                    
-                # 3. Skip if title is identical to uploader (often indicates a channel result)
                 if title == uploader and duration == 0:
                     continue
 
@@ -64,8 +61,15 @@ class YouTubeService:
                     'url': f"https://www.youtube.com/watch?v={video_id}",
                     'thumbnail': entry.get('thumbnails')[0]['url'] if entry.get('thumbnails') else None,
                     'duration': duration,
-                    'channel': uploader
+                    'channel': uploader,
+                    'upload_date': upload_date
                 })
             
-            print(f"DEBUG: Found {len(results)} valid videos for query: {query}")
-            return results
+            # SORT BY DATE (Newest first)
+            # YouTube search doesn't always return upload_date in flat extraction, 
+            # but if it does, we sort. If not, we fall back to YouTube's default order.
+            results.sort(key=lambda x: x.get('upload_date') or '00000000', reverse=True)
+            
+            print(f"DEBUG: Found and sorted {len(results)} valid videos for query: {query}")
+            # Limit to the requested max_results
+            return results[:max_results]

@@ -60,7 +60,7 @@ async def transcribe_youtube(url: str = Form(...)):
 async def search_youtube(query: str = Form(...)):
     """Searches YouTube for videos."""
     try:
-        results = yt_service.search_videos(query)
+        results = yt_service.search_videos(query, max_results=30)
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
