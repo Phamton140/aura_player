@@ -1,10 +1,10 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useMusicStore } from './store/useMusicStore';
 import TransportBar from './components/TransportBar';
 import VideoPlayer from './components/VideoPlayer';
 import ErrorBoundary from './components/ErrorBoundary';
 import YouTubeSearch from './components/YouTubeSearch';
-import { X, Play, Plus, Trash2 } from 'lucide-react';
+import { X, Play, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 import * as Tone from 'tone';
 
 const TICK_INTERVAL = 16; // ms
@@ -26,10 +26,17 @@ function App() {
     seek
   } = useMusicStore();
 
+  const [notification, setNotification] = useState<string | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startWallRef = useRef<number>(0);
   const startSongRef = useRef<number>(0);
   const appContainerRef = useRef<HTMLDivElement>(null);
+
+  // ── Toast Notification Logic ─────────────────────────────────────────────
+  const showNotification = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   // ── Search Logic (Global) ────────────────────────────────────────────────
   const extractYoutubeId = (url: string) => {
@@ -55,6 +62,7 @@ function App() {
     await Tone.start();
     setSong(songData);
     setPlayback({ currentTime: 0, isPlaying: true });
+    showNotification(`Reproduciendo: ${songData.title}`);
   }, [setSong, setPlayback]);
 
   const handleAddToQueue = useCallback((video: any) => {
@@ -71,6 +79,7 @@ function App() {
       thumbnail: video.thumbnail
     };
     addToQueue(songData);
+    showNotification(`Añadido a la cola: ${songData.title}`);
   }, [addToQueue]);
 
   // ── Playback tick ─────────────────────────────────────────────────────────
@@ -131,7 +140,7 @@ function App() {
         startSongRef.current = t;
         startWallRef.current = performance.now();
         startTick(t);
-      }, 50);
+      }, 500);
     }
   }, [playback.isPlaying, seek, startTick, song?.youtubeId]);
 
@@ -179,6 +188,14 @@ function App() {
         </div>
       </header>
 
+      {/* Dynamic Toast Notification */}
+      {notification && (
+        <div className="aura-toast">
+          <CheckCircle2 size={18} className="aura-toast-icon" />
+          <span>{notification}</span>
+        </div>
+      )}
+
       {/* Results Sidebar (Left) */}
       {isSidebarOpen && searchResults.length > 0 && (
         <div className="aura-search-sidebar left">
@@ -196,10 +213,10 @@ function App() {
                 <div className="aura-result-thumb-compact">
                   {video.thumbnail ? <img src={video.thumbnail} alt="" /> : <div className="aura-thumb-placeholder">No Thumb</div>}
                   <div className="aura-item-overlay">
-                    <button className="aura-action-btn" onClick={() => handleSelectVideo(video)}>
+                    <button className="aura-action-btn" onClick={() => handleSelectVideo(video)} title="Reproducir">
                       <Play size={18} fill="currentColor" />
                     </button>
-                    <button className="aura-action-btn" onClick={() => handleAddToQueue(video)}>
+                    <button className="aura-action-btn" onClick={() => handleAddToQueue(video)} title="Añadir a cola">
                       <Plus size={18} />
                     </button>
                   </div>

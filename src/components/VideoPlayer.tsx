@@ -1,10 +1,15 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import type { YouTubeProps, YouTubePlayer } from 'react-youtube';
 import YouTube from 'react-youtube';
 import { useMusicStore } from '../store/useMusicStore';
 
 const VideoPlayer: React.FC = () => {
-  const { song, playback, setPlayback, queue, removeFromQueue, setSong } = useMusicStore();
+  const { 
+    song, playback, setPlayback, queue, 
+    removeFromQueue, setSong, searchResults, 
+    history, addToHistory 
+  } = useMusicStore();
+  
   const playerRef = useRef<YouTubePlayer | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -59,6 +64,36 @@ const VideoPlayer: React.FC = () => {
     }
   }, [playback.currentTime]);
 
+  const handleNextInInfiniteLoop = useCallback(() => {
+    if (!searchResults.length) return null;
+
+    // RULE: Don't repeat if it's in the last 10 songs
+    const recentHistory = history.slice(0, 10);
+    const availablePool = searchResults.filter(res => !recentHistory.includes(res.id) && res.id !== song?.id);
+
+    let nextVideo = null;
+    if (availablePool.length > 0) {
+      // Pick a random one from available pool to keep it varied
+      nextVideo = availablePool[Math.floor(Math.random() * availablePool.length)];
+    } else {
+      // Fallback: pick the one that was played longest ago (last in history)
+      nextVideo = searchResults.find(res => !history.includes(res.id)) || searchResults[0];
+    }
+
+    if (nextVideo) {
+      return {
+        id: nextVideo.id,
+        title: nextVideo.title,
+        composer: nextVideo.channel,
+        tempo: 120,
+        totalDuration: nextVideo.duration || 3600,
+        youtubeId: nextVideo.id,
+        thumbnail: nextVideo.thumbnail
+      };
+    }
+    return null;
+  }, [searchResults, history, song?.id]);
+
   if (!song?.youtubeId) return null;
 
   const onReady: YouTubeProps['onReady'] = (event) => {
@@ -77,19 +112,27 @@ const VideoPlayer: React.FC = () => {
     } else if (event.data === 2) {
       setPlayback({ isPlaying: false });
     } else if (event.data === 0) {
-      // VIDEO ENDED: Crucial to avoid suggested videos grid
+      // Add current to history
+      if (song?.id) addToHistory(song.id);
+
+      // VIDEO ENDED LOGIC
       if (playback.isLooping) {
         playerRef.current.seekTo(0);
         playerRef.current.playVideo();
       } else if (queue.length > 0) {
-        // Auto-play next in queue
         const nextSong = queue[0];
         removeFromQueue(nextSong.id);
         setSong(nextSong);
       } else {
-        // Stop and clear to avoid showing the "Related Videos" grid
-        setPlayback({ isPlaying: false, currentTime: 0 });
-        setSong(null); 
+        // INFINITE AUTOPLAY: Pick from search results
+        const nextSong = handleNextInInfiniteLoop();
+        if (nextSong) {
+          setSong(nextSong);
+          setPlayback({ isPlaying: true, currentTime: 0 });
+        } else {
+          setPlayback({ isPlaying: false, currentTime: 0 });
+          setSong(null);
+        }
       }
     }
   };
@@ -101,7 +144,7 @@ const VideoPlayer: React.FC = () => {
       autoplay: 1,
       controls: 0,
       modestbranding: 1,
-      rel: 0, // Minimizes (but doesn't remove) related videos
+      rel: 0,
       showinfo: 0,
       iv_load_policy: 3,
       disablekb: 1,

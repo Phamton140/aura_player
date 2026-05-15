@@ -17,6 +17,7 @@ interface MusicStore {
   audioLoading: boolean;
   searchResults: SearchResult[];
   queue: Song[];
+  history: string[]; // List of IDs
   isSidebarOpen: boolean;
   isQueueOpen: boolean;
 
@@ -30,6 +31,7 @@ interface MusicStore {
   setQueueOpen: (open: boolean) => void;
   addToQueue: (song: Song) => void;
   removeFromQueue: (id: string) => void;
+  addToHistory: (id: string) => void;
   seek: (time: number) => void;
 }
 
@@ -46,6 +48,7 @@ export const useMusicStore = create<MusicStore>((set) => ({
   audioLoading: false,
   searchResults: [],
   queue: [],
+  history: [],
   isSidebarOpen: false,
   isQueueOpen: false,
 
@@ -80,6 +83,11 @@ export const useMusicStore = create<MusicStore>((set) => ({
   removeFromQueue: (id) => set((state) => ({
     queue: state.queue.filter(s => s.id !== id)
   })),
+
+  addToHistory: (id) => set((state) => {
+    const newHistory = [id, ...state.history].slice(0, 50); // Keep last 50
+    return { history: newHistory };
+  }),
 
   seek: (time) => set((state) => ({
     playback: { ...state.playback, currentTime: Math.max(0, Math.min(time, state.song?.totalDuration || 0)) }
