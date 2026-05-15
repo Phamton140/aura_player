@@ -461,7 +461,18 @@ input[type=range]::-webkit-slider-thumb {
     font-size: 0.8rem;
     padding: 10px 16px;
   }
+
+  /* Always show play buttons on mobile thumbnails */
+  .aura-item-overlay {
+    opacity: 1 !important;
+    background: rgba(0, 0, 0, 0.4); /* Lighter to see the thumb better */
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
 }
+
 
 @media (max-width: 480px) {
   .aura-result-thumb-compact {

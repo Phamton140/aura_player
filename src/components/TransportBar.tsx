@@ -79,7 +79,7 @@ const TransportBar: React.FC<TransportBarProps> = ({
 
         <div className="transport-controls">
           <button 
-            className={`ctrl-btn ${isSidebarOpen ? 'active' : ''}`} 
+            className={`ctrl-btn hide-on-mobile ${isSidebarOpen ? 'active' : ''}`} 
             onClick={() => setSidebarOpen(!isSidebarOpen)}
             title="Resultados"
           >
@@ -95,7 +95,7 @@ const TransportBar: React.FC<TransportBarProps> = ({
           <button className="ctrl-btn" onClick={onSkipForward}><SkipForward size={20} /></button>
           
           <button 
-            className={`ctrl-btn ${isQueueOpen ? 'active' : ''}`} 
+            className={`ctrl-btn hide-on-mobile ${isQueueOpen ? 'active' : ''}`} 
             onClick={() => setQueueOpen(!isQueueOpen)}
             title="Cola"
           >
