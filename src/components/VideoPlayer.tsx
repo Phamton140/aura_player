@@ -16,35 +16,51 @@ const VideoPlayer: React.FC = () => {
 
   // Sync playing state
   useEffect(() => {
-    if (!playerRef.current) return;
-    if (playback.isPlaying) {
-      playerRef.current.playVideo();
-    } else {
-      playerRef.current.pauseVideo();
-    }
+    if (!playerRef.current || typeof playerRef.current.playVideo !== 'function') return;
+    try {
+      if (playback.isPlaying) playerRef.current.playVideo();
+      else playerRef.current.pauseVideo();
+    } catch (e) { /* ignore */ }
   }, [playback.isPlaying]);
 
   // Sync volume
   useEffect(() => {
-    if (playerRef.current) {
-      playerRef.current.setVolume(playback.volume);
+    if (playerRef.current && typeof playerRef.current.setVolume === 'function') {
+      try {
+        playerRef.current.setVolume(playback.volume);
+      } catch (e) { /* ignore */ }
     }
   }, [playback.volume]);
 
   // Sync speed
   useEffect(() => {
     if (playerRef.current && typeof playerRef.current.setPlaybackRate === 'function') {
-      playerRef.current.setPlaybackRate(playback.speed);
+      try {
+        playerRef.current.setPlaybackRate(playback.speed);
+      } catch (e) { /* ignore */ }
     }
   }, [playback.speed]);
 
-  // Sync current time
+  // Sync current time (Store -> Player)
+  useEffect(() => {
+    if (!playerRef.current || typeof playerRef.current.getCurrentTime !== 'function') return;
+    try {
+      const ytTime = playerRef.current.getCurrentTime();
+      if (Math.abs(ytTime - playback.currentTime) > 3.0) {
+        playerRef.current.seekTo(playback.currentTime, true);
+      }
+    } catch (e) { /* ignore */ }
+  }, [playback.currentTime]);
+
+  // Tick for syncing Player -> Store
   useEffect(() => {
     if (playback.isPlaying) {
       syncTimerRef.current = setInterval(() => {
         if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-          const currentTime = playerRef.current.getCurrentTime();
-          setPlayback({ currentTime });
+          try {
+            const currentTime = playerRef.current.getCurrentTime();
+            setPlayback({ currentTime });
+          } catch (e) { /* ignore */ }
         }
       }, 500);
     } else {
@@ -55,122 +71,54 @@ const VideoPlayer: React.FC = () => {
     };
   }, [playback.isPlaying, setPlayback]);
 
-  // Handle seeking
-  useEffect(() => {
-    if (!playerRef.current || typeof playerRef.current.getCurrentTime !== 'function') return;
-    const ytTime = playerRef.current.getCurrentTime();
-    if (Math.abs(ytTime - playback.currentTime) > 2.0) {
-      playerRef.current.seekTo(playback.currentTime, true);
-    }
-  }, [playback.currentTime]);
-
-  const findSmartAlternative = useCallback((currentTitle: string, channel: string) => {
-    if (!searchResults.length) return null;
-
-    const cleanArtist = channel.replace(/VEVO|Official|Music/gi, '').trim().toLowerCase();
-    const coreTitle = currentTitle.toLowerCase()
-      .replace(new RegExp(cleanArtist, 'gi'), '')
-      .replace(/official|video|audio|lyrics|live|en vivo|HD|4K|\[|\]|\(|\)|-|_/gi, ' ')
-      .trim();
-
-    const keywords = coreTitle.split(/\s+/).filter(w => w.length > 2);
-    if (keywords.length === 0) return null;
-
-    const scoredAlternatives = searchResults
-      .filter(res => 
-        !blacklistedIds.includes(res.id) && 
-        !blacklistedChannels.includes(res.channel) && 
-        res.id !== song?.id
-      )
-      .map(res => {
-        const resTitle = res.title.toLowerCase();
-        const matches = keywords.filter(k => resTitle.includes(k)).length;
-        const score = matches / keywords.length;
-        return { res, score };
-      })
-      .filter(item => item.score >= 0.6)
-      .sort((a, b) => b.score - a.score);
-
-    if (scoredAlternatives.length > 0) {
-      const best = scoredAlternatives[0].res;
-      return {
-        id: best.id,
-        title: best.title,
-        composer: best.channel,
-        tempo: 120,
-        totalDuration: best.duration || 3600,
-        youtubeId: best.id,
-        thumbnail: best.thumbnail
-      };
-    }
-    return null;
-  }, [searchResults, song?.id, blacklistedIds, blacklistedChannels]);
-
-  const playNext = useCallback((isRetry = false) => {
-    if (isRetry && song) {
-      const alternative = findSmartAlternative(song.title, song.composer || '');
-      if (alternative) {
-        setSong(alternative);
-        setPlayback({ isPlaying: true, currentTime: 0 });
-        return;
-      }
-    }
-
-    if (queue.length > 0) {
-      const nextSong = queue[0];
-      removeFromQueue(nextSong.id);
-      setSong(nextSong);
-      setPlayback({ isPlaying: true, currentTime: 0 });
-      return;
-    }
-
-    const recentHistory = history.slice(0, 10);
+  const getNextSong = useCallback(() => {
+    if (queue.length > 0) return queue[0];
     const availablePool = searchResults.filter(res => 
-      !recentHistory.includes(res.id) && 
+      !history.includes(res.id) && 
       !blacklistedIds.includes(res.id) && 
       !blacklistedChannels.includes(res.channel) && 
       res.id !== song?.id
     );
-
     if (availablePool.length > 0) {
-      const nextVideoData = availablePool[Math.floor(Math.random() * availablePool.length)];
-      setSong({
-        id: nextVideoData.id,
-        title: nextVideoData.title,
-        composer: nextVideoData.channel,
-        tempo: 120,
-        totalDuration: nextVideoData.duration || 3600,
-        youtubeId: nextVideoData.id,
-        thumbnail: nextVideoData.thumbnail
-      });
-      setPlayback({ isPlaying: true, currentTime: 0 });
+      const next = availablePool[Math.floor(Math.random() * availablePool.length)];
+      return {
+        id: next.id, title: next.title, composer: next.channel,
+        tempo: 120, totalDuration: next.duration || 3600,
+        youtubeId: next.id, thumbnail: next.thumbnail
+      };
+    }
+    return null;
+  }, [queue, searchResults, history, blacklistedIds, blacklistedChannels, song?.id]);
+
+  const playNext = useCallback(() => {
+    const next = getNextSong();
+    if (next) {
+      if (queue.length > 0 && queue[0].id === next.id) removeFromQueue(next.id);
+      setSong(next);
     } else {
       setPlayback({ isPlaying: false, currentTime: 0 });
       setSong(null);
     }
-  }, [queue, removeFromQueue, setSong, setPlayback, searchResults, history, song, findSmartAlternative, blacklistedIds, blacklistedChannels]);
+  }, [getNextSong, setSong, setPlayback, queue, removeFromQueue]);
 
   if (!song?.youtubeId) return null;
 
   const onReady: YouTubeProps['onReady'] = (event) => {
     playerRef.current = event.target;
-    playerRef.current.setVolume(playback.volume);
-    playerRef.current.setPlaybackRate(playback.speed);
-    
-    // Resume from persisted time if available
-    if (playback.currentTime > 0) {
-      playerRef.current.seekTo(playback.currentTime, true);
-    }
+    try {
+      playerRef.current.setVolume(playback.volume);
+      playerRef.current.setPlaybackRate(playback.speed);
+      if (playback.currentTime > 0) {
+        playerRef.current.seekTo(playback.currentTime, true);
+      }
+    } catch (e) { /* ignore */ }
   };
 
   const onError: YouTubeProps['onError'] = (event) => {
-    console.warn(`Video/Channel restricted (Error: ${event.data}). Blacklisting ID: ${song.id} and Channel: ${song.composer}`);
-    // EXTREME FILTER: Blacklist both the specific video and the entire channel
-    addToBlacklist(song.id);
-    if (song.composer) {
-      addToChannelBlacklist(song.composer);
-    }
-    playNext(true);
+    console.warn("Video Error", event.data);
+    if (song?.id) addToBlacklist(song.id);
+    if (song?.composer) addToChannelBlacklist(song.composer);
+    playNext();
   };
 
   const onStateChange: YouTubeProps['onStateChange'] = (event) => {
@@ -179,22 +127,29 @@ const VideoPlayer: React.FC = () => {
     else if (event.data === 0) {
       if (song?.id) addToHistory(song.id);
       if (playback.isLooping) {
-        playerRef.current.seekTo(0);
-        playerRef.current.playVideo();
+        playerRef.current?.seekTo(0);
+        playerRef.current?.playVideo();
       } else {
-        playNext(false);
+        playNext();
       }
     }
   };
 
   const opts: YouTubeProps['opts'] = {
     height: '100%', width: '100%',
-    playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1, fs: 0, origin: window.location.origin, vq: 'hd2160' },
+    playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1, fs: 0, origin: window.location.origin, vq: 'hd1080' },
   };
 
   return (
     <div className="video-player-container no-interaction">
-      <YouTube videoId={song.youtubeId} opts={opts} onReady={onReady} onStateChange={onStateChange} onError={onError} className="youtube-iframe" />
+      <YouTube 
+        videoId={song.youtubeId} 
+        opts={opts} 
+        onReady={onReady} 
+        onStateChange={onStateChange} 
+        onError={onError} 
+        className="youtube-iframe" 
+      />
     </div>
   );
 };

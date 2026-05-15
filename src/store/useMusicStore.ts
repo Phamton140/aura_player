@@ -26,7 +26,7 @@ interface MusicStore {
   isQueueOpen: boolean;
 
   // Actions
-  setSong: (song: Song | null) => void;
+  setSong: (song: Song | null, keepTime?: boolean) => void;
   setPlayback: (playback: Partial<PlaybackState> | ((state: PlaybackState) => PlaybackState)) => void;
   setAudioReady: (ready: boolean) => void;
   setAudioLoading: (loading: boolean) => void;
@@ -64,14 +64,12 @@ export const useMusicStore = create<MusicStore>()(
       isSidebarOpen: false,
       isQueueOpen: false,
 
-      setSong: (song) => set((state) => ({ 
+      setSong: (song, keepTime = false) => set((state) => ({ 
         song, 
         playback: { 
           ...state.playback,
-          isPlaying: false, // Don't autoplay on refresh to respect browser policies
-          currentTime: 0, 
-          speed: 1, 
-          isLooping: false, 
+          isPlaying: song ? true : false, 
+          currentTime: keepTime ? state.playback.currentTime : 0, 
         } 
       })),
       
@@ -145,17 +143,17 @@ export const useMusicStore = create<MusicStore>()(
     {
       name: 'aura-music-storage',
       storage: createJSONStorage(() => localStorage),
-      // Only persist the necessary state
       partialize: (state) => ({ 
         song: state.song,
         queue: state.queue,
+        searchResults: state.searchResults,
         lastVolume: state.lastVolume,
         blacklistedIds: state.blacklistedIds,
         blacklistedChannels: state.blacklistedChannels,
         history: state.history,
         playback: {
           ...state.playback,
-          isPlaying: false, // Always start paused on refresh
+          isPlaying: false, 
           currentTime: state.playback.currentTime
         }
       }),
