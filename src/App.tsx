@@ -31,6 +31,7 @@ function App() {
   const startWallRef = useRef<number>(0);
   const startSongRef = useRef<number>(0);
   const appContainerRef = useRef<HTMLDivElement>(null);
+  const lastVolumeRef = useRef<number>(80);
 
   // ── Toast Notification Logic ─────────────────────────────────────────────
   const showNotification = (msg: string) => {
@@ -156,6 +157,63 @@ function App() {
     }
   }, []);
 
+  const handleToggleMute = useCallback(() => {
+    if (playback.volume > 0) {
+      lastVolumeRef.current = playback.volume;
+      setPlayback({ volume: 0 });
+      showNotification("Silenciado");
+    } else {
+      setPlayback({ volume: lastVolumeRef.current });
+      showNotification(`Volumen: ${lastVolumeRef.current}%`);
+    }
+  }, [playback.volume, setPlayback]);
+
+  // ── Keyboard Shortcuts ────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in search
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch (e.key.toLowerCase()) {
+        case ' ':
+        case 'k':
+        case 'p':
+          e.preventDefault();
+          playback.isPlaying ? handlePause() : handlePlay();
+          break;
+        case 'm':
+          handleToggleMute();
+          break;
+        case 'f':
+          handleToggleFullscreen();
+          break;
+        case 'j':
+        case 'arrowleft':
+          handleSkipBack();
+          break;
+        case 'l':
+        case 'arrowright':
+          handleSkipForward();
+          break;
+        case 'arrowup':
+          e.preventDefault();
+          const newVolUp = Math.min(100, playback.volume + 10);
+          setPlayback({ volume: newVolUp });
+          showNotification(`Volumen: ${newVolUp}%`);
+          break;
+        case 'arrowdown':
+          e.preventDefault();
+          const newVolDown = Math.max(0, playback.volume - 10);
+          setPlayback({ volume: newVolDown });
+          showNotification(`Volumen: ${newVolDown}%`);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [playback.isPlaying, handlePlay, handlePause, handleToggleMute, handleToggleFullscreen, handleSkipBack, handleSkipForward]);
+
   useEffect(() => {
     const resumeAudio = () => {
       if (Tone.getContext().state !== 'running') Tone.getContext().resume();
@@ -267,6 +325,14 @@ function App() {
           {song ? (
             <div className="aura-minimalist-stage">
               <div className="aura-player-full-focus">
+                <div 
+                  className="aura-interaction-layer"
+                  onClick={() => playback.isPlaying ? handlePause() : handlePlay()}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleFullscreen();
+                  }}
+                ></div>
                 <div className="aura-player-wrapper">
                   <ErrorBoundary>
                     <VideoPlayer />

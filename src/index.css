@@ -185,11 +185,21 @@ input[type=range]::-webkit-slider-thumb {
   background: #000; display: flex; z-index: 10;
 }
 
-.aura-content-area {
-  flex: 1; width: 100%; height: 100%;
-  position: relative; overflow: hidden; /* CROP EVERYTHING HERE */
+.aura-minimalist-stage {
+  width: 100%; height: 100%; position: relative;
+}
+
+.aura-player-full-focus {
+  position: relative; width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
 }
+
+.aura-interaction-layer {
+  position: absolute; inset: 0;
+  z-index: 100; cursor: pointer;
+  background: transparent;
+}
+
 
 .aura-player-wrapper {
   width: 110%; /* Physically larger than container to hide side logos */
