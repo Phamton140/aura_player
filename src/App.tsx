@@ -171,7 +171,6 @@ function App() {
   // ── Keyboard Shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts if user is typing in search
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       switch (e.key.toLowerCase()) {
@@ -212,7 +211,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [playback.isPlaying, handlePlay, handlePause, handleToggleMute, handleToggleFullscreen, handleSkipBack, handleSkipForward]);
+  }, [playback.isPlaying, playback.volume, handlePlay, handlePause, handleToggleMute, handleToggleFullscreen, handleSkipBack, handleSkipForward, setPlayback]);
 
   useEffect(() => {
     const resumeAudio = () => {
@@ -246,7 +245,6 @@ function App() {
         </div>
       </header>
 
-      {/* Dynamic Toast Notification */}
       {notification && (
         <div className="aura-toast">
           <CheckCircle2 size={18} className="aura-toast-icon" />
@@ -323,21 +321,21 @@ function App() {
       <div className="aura-main-container">
         <main className="aura-content-area">
           {song ? (
-            <div className="aura-minimalist-stage">
-              <div className="aura-player-full-focus">
-                <div 
-                  className="aura-interaction-layer"
-                  onClick={() => playback.isPlaying ? handlePause() : handlePlay()}
-                  onDoubleClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleFullscreen();
-                  }}
-                ></div>
-                <div className="aura-player-wrapper">
-                  <ErrorBoundary>
-                    <VideoPlayer />
-                  </ErrorBoundary>
-                </div>
+            <div className="aura-player-full-focus">
+              {/* RESTORED INTERACTION LAYER */}
+              <div 
+                className="aura-interaction-layer"
+                onClick={() => playback.isPlaying ? handlePause() : handlePlay()}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleFullscreen();
+                }}
+              ></div>
+              
+              <div className="aura-player-wrapper">
+                <ErrorBoundary>
+                  <VideoPlayer />
+                </ErrorBoundary>
               </div>
             </div>
           ) : (
