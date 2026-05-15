@@ -78,8 +78,30 @@ input[type=range]::-webkit-slider-thumb {
   position: relative; z-index: 1000;
 }
 
-.brand-dot { width: 10px; height: 10px; background: var(--accent-primary); border-radius: 50%; box-shadow: 0 0 15px var(--accent-primary); margin-right: 12px; }
-.aura-brand { display: flex; align-items: center; font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 800; cursor: pointer; }
+.aura-brand {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 1.2rem; font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.brand-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  mix-blend-mode: screen; /* Removes black background */
+  filter: drop-shadow(0 0 8px rgba(0, 150, 255, 0.6));
+}
+
+.brand-logo-fallback {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.aura-neon-icon {
+  color: #00d2ff;
+  filter: drop-shadow(0 0 5px #00d2ff) drop-shadow(0 0 10px #3a7bd5);
+}
 
 .aura-search-field {
   display: flex; height: 44px; width: 500px;

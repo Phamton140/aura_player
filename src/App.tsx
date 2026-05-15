@@ -4,7 +4,7 @@ import TransportBar from './components/TransportBar';
 import VideoPlayer from './components/VideoPlayer';
 import ErrorBoundary from './components/ErrorBoundary';
 import YouTubeSearch from './components/YouTubeSearch';
-import { X, Play, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import { X, Play, Plus, Trash2, CheckCircle2, Music } from 'lucide-react';
 import * as Tone from 'tone';
 
 const TICK_INTERVAL = 16; // ms
@@ -28,6 +28,7 @@ function App() {
   } = useMusicStore();
 
   const [notification, setNotification] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startWallRef = useRef<number>(0);
   const startSongRef = useRef<number>(0);
@@ -150,8 +151,11 @@ function App() {
   const handleSkipForward = useCallback(() => handleSeek(Math.min(song?.totalDuration ?? 0, playback.currentTime + 5)), [handleSeek, playback.currentTime, song]);
 
   const handleToggleFullscreen = useCallback(() => {
+    if (!appContainerRef.current) return;
     if (!document.fullscreenElement) {
-      appContainerRef.current?.requestFullscreen();
+      appContainerRef.current.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
     } else {
       document.exitFullscreen();
     }
@@ -159,8 +163,8 @@ function App() {
 
   const handleToggleMute = useCallback(() => {
     toggleMute();
-    const isMuted = playback.volume === 0;
-    showNotification(isMuted ? "Sonido Activado" : "Silenciado");
+    const isMutedNow = playback.volume === 0;
+    showNotification(isMutedNow ? "Sonido Activado" : "Silenciado");
   }, [playback.volume, toggleMute]);
 
   // ── Keyboard Shortcuts ────────────────────────────────────────────────────
@@ -228,7 +232,18 @@ function App() {
       <header className="aura-header">
         <div className="aura-left">
           <div className="aura-brand" onClick={() => setSong(null)}>
-            <div className="brand-dot"></div>
+            {!logoError ? (
+              <img 
+                src="/logo.png" 
+                alt="" 
+                className="brand-logo" 
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="brand-logo-fallback">
+                <Music size={24} className="aura-neon-icon" />
+              </div>
+            )}
             <span>AuraPlayer</span>
           </div>
         </div>
@@ -236,7 +251,7 @@ function App() {
           <YouTubeSearch />
         </div>
         <div className="aura-right">
-          <div className="aura-user-token">A</div>
+          <div className="aura-spacer" />
         </div>
       </header>
 
