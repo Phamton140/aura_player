@@ -261,4 +261,15 @@ input[type=range]::-webkit-slider-thumb {
 .main-play { background: white; color: black; border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
 
 .transport-extra { width: 320px; display: flex; align-items: center; justify-content: flex-end; gap: 24px; flex-shrink: 0; }
-.volume-track { width: 120px; }
+
+.volume-mini-container {
+  display: flex; align-items: center; gap: 12px;
+}
+.volume-track { width: 100px; display: flex; align-items: center; }
+.volume-slider-input { width: 100%; }
+
+.volume-toggle-btn {
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+.volume-toggle-btn:hover { color: white; }

@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
-  Repeat, Volume2, Maximize, Search, ListMusic
+  Repeat, Volume2, VolumeX, Maximize, Search, ListMusic
 } from 'lucide-react';
 import { useMusicStore } from '../store/useMusicStore';
 import type { PlaybackState, Song } from '../types/music';
@@ -31,7 +31,7 @@ const TransportBar: React.FC<TransportBarProps> = ({
   song, playback, onPlay, onPause, onSeek,
   onLoopToggle, onSkipBack, onSkipForward, onFullscreen
 }) => {
-  const { setPlayback, isSidebarOpen, setSidebarOpen, isQueueOpen, setQueueOpen } = useMusicStore();
+  const { setPlayback, toggleMute, isSidebarOpen, setSidebarOpen, isQueueOpen, setQueueOpen } = useMusicStore();
   const duration = song?.totalDuration ?? 0;
   const pct = duration > 0 ? (playback.currentTime / duration) * 100 : 0;
 
@@ -108,8 +108,10 @@ const TransportBar: React.FC<TransportBarProps> = ({
         </div>
 
         <div className="transport-extra">
-          <div className="volume-mini">
-            <Volume2 size={18} />
+          <div className="volume-mini-container">
+            <button className="ctrl-btn volume-toggle-btn" onClick={toggleMute}>
+              {playback.volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
             <div className="volume-track">
               <input 
                 type="range" 

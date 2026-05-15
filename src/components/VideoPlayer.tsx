@@ -7,12 +7,12 @@ const VideoPlayer: React.FC = () => {
   const { 
     song, playback, setPlayback, queue, 
     removeFromQueue, setSong, searchResults, 
-    history, addToHistory 
+    history, addToHistory, blacklistedIds, blacklistedChannels, 
+    addToBlacklist, addToChannelBlacklist
   } = useMusicStore();
   
   const playerRef = useRef<YouTubePlayer | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const failedIdsRef = useRef<Set<string>>(new Set());
 
   // Sync playing state
   useEffect(() => {
@@ -67,30 +67,29 @@ const VideoPlayer: React.FC = () => {
   const findSmartAlternative = useCallback((currentTitle: string, channel: string) => {
     if (!searchResults.length) return null;
 
-    // 1. Clean the title to get the core song name
-    // Remove artist name, common fluff, and punctuation
     const cleanArtist = channel.replace(/VEVO|Official|Music/gi, '').trim().toLowerCase();
     const coreTitle = currentTitle.toLowerCase()
-      .replace(new RegExp(cleanArtist, 'gi'), '') // Remove artist name from title
+      .replace(new RegExp(cleanArtist, 'gi'), '')
       .replace(/official|video|audio|lyrics|live|en vivo|HD|4K|\[|\]|\(|\)|-|_/gi, ' ')
       .trim();
 
-    const keywords = coreTitle.split(/\s+/)
-      .filter(w => w.length > 2); // Ignore very short words like "de", "la"
-
+    const keywords = coreTitle.split(/\s+/).filter(w => w.length > 2);
     if (keywords.length === 0) return null;
 
-    // 2. Rank search results by keyword match density
     const scoredAlternatives = searchResults
-      .filter(res => !failedIdsRef.current.has(res.id) && res.id !== song?.id)
+      .filter(res => 
+        !blacklistedIds.includes(res.id) && 
+        !blacklistedChannels.includes(res.channel) && 
+        res.id !== song?.id
+      )
       .map(res => {
         const resTitle = res.title.toLowerCase();
         const matches = keywords.filter(k => resTitle.includes(k)).length;
-        const score = matches / keywords.length; // Percentage of keywords found
+        const score = matches / keywords.length;
         return { res, score };
       })
-      .filter(item => item.score >= 0.6) // Must match at least 60% of keywords
-      .sort((a, b) => b.score - a.score); // Best match first
+      .filter(item => item.score >= 0.6)
+      .sort((a, b) => b.score - a.score);
 
     if (scoredAlternatives.length > 0) {
       const best = scoredAlternatives[0].res;
@@ -105,25 +104,18 @@ const VideoPlayer: React.FC = () => {
       };
     }
     return null;
-  }, [searchResults, song?.id]);
+  }, [searchResults, song?.id, blacklistedIds, blacklistedChannels]);
 
   const playNext = useCallback((isRetry = false) => {
     if (isRetry && song) {
-      // Try to find a TRUE alternative for the SAME theme
       const alternative = findSmartAlternative(song.title, song.composer || '');
       if (alternative) {
-        console.log(`Smart Recovery: Found alternative for "${song.title}" -> "${alternative.title}"`);
         setSong(alternative);
         setPlayback({ isPlaying: true, currentTime: 0 });
         return;
-      } else {
-        console.warn(`Smart Recovery: No suitable alternative found for "${song.title}". Stopping to prevent unrelated playback.`);
-        // Optional: notify the user or just stop. 
-        // User said: "salte a la que si se parezca". If none found, better to let them pick or jump to queue.
       }
     }
 
-    // Fallback to queue
     if (queue.length > 0) {
       const nextSong = queue[0];
       removeFromQueue(nextSong.id);
@@ -132,9 +124,13 @@ const VideoPlayer: React.FC = () => {
       return;
     }
 
-    // Fallback to infinite autoplay (random but not recently played)
     const recentHistory = history.slice(0, 10);
-    const availablePool = searchResults.filter(res => !recentHistory.includes(res.id) && !failedIdsRef.current.has(res.id) && res.id !== song?.id);
+    const availablePool = searchResults.filter(res => 
+      !recentHistory.includes(res.id) && 
+      !blacklistedIds.includes(res.id) && 
+      !blacklistedChannels.includes(res.channel) && 
+      res.id !== song?.id
+    );
 
     if (availablePool.length > 0) {
       const nextVideoData = availablePool[Math.floor(Math.random() * availablePool.length)];
@@ -152,7 +148,7 @@ const VideoPlayer: React.FC = () => {
       setPlayback({ isPlaying: false, currentTime: 0 });
       setSong(null);
     }
-  }, [queue, removeFromQueue, setSong, setPlayback, searchResults, history, song, findSmartAlternative]);
+  }, [queue, removeFromQueue, setSong, setPlayback, searchResults, history, song, findSmartAlternative, blacklistedIds, blacklistedChannels]);
 
   if (!song?.youtubeId) return null;
 
@@ -163,9 +159,13 @@ const VideoPlayer: React.FC = () => {
   };
 
   const onError: YouTubeProps['onError'] = (event) => {
-    console.warn(`Restricted video (Error: ${event.data}) for ID: ${song.id}. Searching for smart alternative...`);
-    failedIdsRef.current.add(song.id);
-    playNext(true); // isRetry = true
+    console.warn(`Video/Channel restricted (Error: ${event.data}). Blacklisting ID: ${song.id} and Channel: ${song.composer}`);
+    // EXTREME FILTER: Blacklist both the specific video and the entire channel
+    addToBlacklist(song.id);
+    if (song.composer) {
+      addToChannelBlacklist(song.composer);
+    }
+    playNext(true);
   };
 
   const onStateChange: YouTubeProps['onStateChange'] = (event) => {
@@ -177,7 +177,7 @@ const VideoPlayer: React.FC = () => {
         playerRef.current.seekTo(0);
         playerRef.current.playVideo();
       } else {
-        playNext(false); // Normal end, not a retry
+        playNext(false);
       }
     }
   };

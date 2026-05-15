@@ -23,6 +23,7 @@ function App() {
     setQueueOpen,
     addToQueue,
     removeFromQueue,
+    toggleMute,
     seek
   } = useMusicStore();
 
@@ -31,7 +32,6 @@ function App() {
   const startWallRef = useRef<number>(0);
   const startSongRef = useRef<number>(0);
   const appContainerRef = useRef<HTMLDivElement>(null);
-  const lastVolumeRef = useRef<number>(80);
 
   // ── Toast Notification Logic ─────────────────────────────────────────────
   const showNotification = (msg: string) => {
@@ -158,15 +158,10 @@ function App() {
   }, []);
 
   const handleToggleMute = useCallback(() => {
-    if (playback.volume > 0) {
-      lastVolumeRef.current = playback.volume;
-      setPlayback({ volume: 0 });
-      showNotification("Silenciado");
-    } else {
-      setPlayback({ volume: lastVolumeRef.current });
-      showNotification(`Volumen: ${lastVolumeRef.current}%`);
-    }
-  }, [playback.volume, setPlayback]);
+    toggleMute();
+    const isMuted = playback.volume === 0;
+    showNotification(isMuted ? "Sonido Activado" : "Silenciado");
+  }, [playback.volume, toggleMute]);
 
   // ── Keyboard Shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
@@ -322,7 +317,6 @@ function App() {
         <main className="aura-content-area">
           {song ? (
             <div className="aura-player-full-focus">
-              {/* RESTORED INTERACTION LAYER */}
               <div 
                 className="aura-interaction-layer"
                 onClick={() => playback.isPlaying ? handlePause() : handlePlay()}
