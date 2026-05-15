@@ -156,6 +156,11 @@ const VideoPlayer: React.FC = () => {
     playerRef.current = event.target;
     playerRef.current.setVolume(playback.volume);
     playerRef.current.setPlaybackRate(playback.speed);
+    
+    // Resume from persisted time if available
+    if (playback.currentTime > 0) {
+      playerRef.current.seekTo(playback.currentTime, true);
+    }
   };
 
   const onError: YouTubeProps['onError'] = (event) => {
