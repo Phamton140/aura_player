@@ -473,6 +473,16 @@ input[type=range]::-webkit-slider-thumb {
   }
 }
 
+.hide-on-desktop {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .hide-on-desktop {
+    display: flex !important;
+  }
+}
+
 
 @media (max-width: 480px) {
   .aura-result-thumb-compact {
