@@ -78,14 +78,6 @@ const TransportBar: React.FC<TransportBarProps> = ({
         </div>
 
         <div className="transport-controls">
-          <button 
-            className={`ctrl-btn hide-on-desktop ${isSidebarOpen ? 'active' : ''}`} 
-            onClick={() => setSidebarOpen(!isSidebarOpen)}
-            title="Resultados"
-          >
-            <Search size={20} />
-          </button>
-
           <button className="ctrl-btn" onClick={onSkipBack}><SkipBack size={20} /></button>
           
           <button className="ctrl-btn main-play" onClick={playback.isPlaying ? onPause : onPlay}>
@@ -93,14 +85,6 @@ const TransportBar: React.FC<TransportBarProps> = ({
           </button>
           
           <button className="ctrl-btn" onClick={onSkipForward}><SkipForward size={20} /></button>
-          
-          <button 
-            className={`ctrl-btn hide-on-desktop ${isQueueOpen ? 'active' : ''}`} 
-            onClick={() => setQueueOpen(!isQueueOpen)}
-            title="Cola"
-          >
-            <ListMusic size={20} />
-          </button>
 
           <button className={`ctrl-btn ${playback.isLooping ? 'active' : ''}`} onClick={onLoopToggle}>
             <Repeat size={18} />
@@ -108,6 +92,22 @@ const TransportBar: React.FC<TransportBarProps> = ({
         </div>
 
         <div className="transport-extra">
+          <button 
+            className={`ctrl-btn extra-inline-btn ${isSidebarOpen ? 'active' : ''}`} 
+            onClick={() => setSidebarOpen(!isSidebarOpen)}
+          >
+            <Search size={18} />
+            <span className="hide-on-mobile">Resultados</span>
+          </button>
+
+          <button 
+            className={`ctrl-btn extra-inline-btn ${isQueueOpen ? 'active' : ''}`} 
+            onClick={() => setQueueOpen(!isQueueOpen)}
+          >
+            <ListMusic size={18} />
+            <span className="hide-on-mobile">Cola</span>
+          </button>
+
           <div className="volume-mini-container">
             <button className="ctrl-btn volume-toggle-btn" onClick={toggleMute}>
               {playback.volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
