@@ -93,19 +93,19 @@ const TransportBar: React.FC<TransportBarProps> = ({
 
         <div className="transport-extra">
           <button 
-            className={`ctrl-btn extra-inline-btn ${isSidebarOpen ? 'active' : ''}`} 
+            className={`ctrl-btn extra-inline-btn hide-on-mobile ${isSidebarOpen ? 'active' : ''}`} 
             onClick={() => setSidebarOpen(!isSidebarOpen)}
           >
             <Search size={18} />
-            <span className="hide-on-mobile">Resultados</span>
+            <span>Resultados</span>
           </button>
 
           <button 
-            className={`ctrl-btn extra-inline-btn ${isQueueOpen ? 'active' : ''}`} 
+            className={`ctrl-btn extra-inline-btn hide-on-mobile ${isQueueOpen ? 'active' : ''}`} 
             onClick={() => setQueueOpen(!isQueueOpen)}
           >
             <ListMusic size={18} />
-            <span className="hide-on-mobile">Cola</span>
+            <span>Cola</span>
           </button>
 
           <div className="volume-mini-container">

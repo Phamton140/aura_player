@@ -271,7 +271,7 @@ function App() {
         </div>
         <div className="aura-right">
           <button 
-            className={`aura-nav-btn ${isSidebarOpen ? 'active' : ''}`} 
+            className={`aura-nav-btn hide-on-desktop ${isSidebarOpen ? 'active' : ''}`} 
             onClick={() => setSidebarOpen(!isSidebarOpen)}
             title="Resultados"
           >
@@ -279,7 +279,7 @@ function App() {
             {searchResults.length > 0 && <span className="aura-btn-badge">{searchResults.length}</span>}
           </button>
           <button 
-            className={`aura-nav-btn ${isQueueOpen ? 'active' : ''}`} 
+            className={`aura-nav-btn hide-on-desktop ${isQueueOpen ? 'active' : ''}`} 
             onClick={() => setQueueOpen(!isQueueOpen)}
             title="Mi Cola"
           >
